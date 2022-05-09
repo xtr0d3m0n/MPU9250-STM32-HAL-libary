@@ -1,12 +1,14 @@
 /*
  * MPU925.h
  *
- *  Created on: 23 ìàÿ 2018 ã.
+ *  Created on: 23 çˆ¨ï£µ 2018 ?
  *      Author: Max
+ *  Modified on May 9,2022
+ *      Modified by : zhyf0610
  */
 
-#ifndef MPU925_H_
-#define MPU925_H_
+#ifndef MPU9250_H_
+#define MPU9250_H_
 
 #include "main.h"
 #include "MPU9250_Config.h"
@@ -52,7 +54,7 @@ typedef enum SampleRateDivider_ {
 
 uint8_t MPU9250_Init(void);
 /* read the data, each argiment should point to a array for x, y, and x */
-void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData);
+void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData, float32_t *TempData);
 
 /* sets the sample rate divider to values other than default */
 void MPU9250_SetSampleRateDivider(SampleRateDivider srd);
@@ -63,7 +65,7 @@ void MPU9250_SetGyroRange(GyroRange range);
 /* sets the accelerometer full scale range to values other than default */
 void MPU9250_SetAccelRange(AccelRange range);
 
-#endif /* MPU925_H_ */
+#endif /* MPU9250_H_ */
 
 
 
