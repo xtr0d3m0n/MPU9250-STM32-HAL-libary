@@ -3,6 +3,8 @@
  *
  *  Created on: Feb 28, 2019
  *      Author: Desert
+ *  Modified on May 9,2022
+ *      Modified by : zhyf0610
  */
 
 #include "MPU9250.h"
@@ -76,6 +78,10 @@ const uint8_t FIFO_MAG = 0x01;
 const uint8_t FIFO_COUNT = 0x72;
 const uint8_t FIFO_READ = 0x74;
 
+// MPU9250 in-chip temperature parameters
+const uint16_t RoomTemp_Offset = 21 ; 
+const float32_t Temp_Sensitivity = 333.87;
+
 // AK8963 registers
 const uint8_t AK8963_I2C_ADDR = 0x0C;
 const uint8_t AK8963_HXL = 0x03;
@@ -88,7 +94,6 @@ const uint8_t AK8963_CNTL2 = 0x0B;
 const uint8_t AK8963_RESET = 0x01;
 const uint8_t AK8963_ASA = 0x10;
 const uint8_t AK8963_WHO_AM_I = 0x00;
-
 
 static uint8_t _buffer[21];
 static uint8_t _mag_adjust[3];
@@ -276,7 +281,7 @@ uint8_t MPU9250_Init()
 	// setting accel range to 16G as default
 	writeRegister(ACCEL_CONFIG,ACCEL_FS_SEL_16G);
 
-	// setting the gyro range to 2000DPS as default
+	// setting the gyro range to 250DPS as default
 	writeRegister(GYRO_CONFIG,GYRO_FS_SEL_250DPS);
 
 	// setting bandwidth to 184Hz as default
@@ -399,8 +404,8 @@ void MPU9250_SetSampleRateDivider(SampleRateDivider srd)
 	writeRegister(SMPDIV, srd);
 }
 
-/* read the data, each argiment should point to a array for x, y, and x */
-void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
+/* read the data, each argiment should point to a array for x, y, and z , at last read the temperature data */
+void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData, float32_t *TempData)
 {
 	// grab the data from the MPU9250
 	readRegisters(ACCEL_OUT, 21, _buffer);
@@ -409,6 +414,7 @@ void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
 	AccData[0] = (((int16_t)_buffer[0]) << 8) | _buffer[1];
 	AccData[1] = (((int16_t)_buffer[2]) << 8) | _buffer[3];
 	AccData[2] = (((int16_t)_buffer[4]) << 8) | _buffer[5];
+	
 	GyroData[0] = (((int16_t)_buffer[8]) << 8) | _buffer[9];
 	GyroData[1] = (((int16_t)_buffer[10]) << 8) | _buffer[11];
 	GyroData[2] = (((int16_t)_buffer[12]) << 8) | _buffer[13];
@@ -420,4 +426,10 @@ void MPU9250_GetData(int16_t* AccData, int16_t* MagData, int16_t* GyroData)
 	MagData[0] = (int16_t)((float)magx * ((float)(_mag_adjust[0] - 128) / 256.0f + 1.0f));
 	MagData[1] = (int16_t)((float)magy * ((float)(_mag_adjust[1] - 128) / 256.0f + 1.0f));
 	MagData[2] = (int16_t)((float)magz * ((float)(_mag_adjust[2] - 128) / 256.0f + 1.0f));
+	
+	//transform Temperature data into float 32 bit values 
+	*TempData = (float32_t)((((((int16_t)_buffer[6]) << 8) | _buffer[7]) - RoomTemp_Offset) / Temp_Sensitivity + 21.0f); //according to the register map file 4.23, TEMP_degC = ((TEMP_OUT - RoomTemp_Offset)/ Temp_Sensitivity) + 21degC
+	
+	//according to the datasheet 3.4.2, RoomTemp_Offset = 21, Sensitivity = 333.87
+	
 }
